@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+.env
+.env.local
+.env.*.local
+.cred
+storage/
+playwright-report/
+test-results/
+tsconfig.tsbuildinfo

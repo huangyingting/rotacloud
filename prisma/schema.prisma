@@ -1,0 +1,628 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Workspace {
+  id                     String   @id @default(cuid())
+  accountNumericId       Int      @unique @default(108044)
+  name                   String   @default("MS")
+  industry               String   @default("Hospitality")
+  timezone               String   @default("Europe/London")
+  currencySymbol         String   @default("£")
+  phone                  String?
+  address1               String?
+  address2               String?
+  city                   String?
+  county                 String?
+  postcode               String?
+  countryName            String   @default("United Kingdom")
+  vatNumber              String?
+  planId                 String   @default("plan-standard")
+  billingCycle           String   @default("monthly")
+  addonTimeAndAttendance Boolean  @default(true)
+  addonSmsCredits        Int      @default(100)
+  setupStepsJson         String   @default("{\"accountCreated\":true,\"locationsAdded\":false,\"rolesAdded\":false,\"employeesAdded\":false,\"shiftPublished\":false}")
+  settingsJson           String   @default("{}")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  users                 User[]
+  invitations           AccountInvitation[]
+  auditLogs             AuditLog[]
+  locations             Location[]
+  roles                 Role[]
+  groups                Group[]
+  shifts                Shift[]
+  dayNotes              DayNote[]
+  shiftRequests         ShiftRequest[]
+  leaveRecords          LeaveRecord[]
+  leaveEmbargoes        LeaveEmbargo[]
+  toilEntries           ToilEntry[]
+  availabilityEntries   AvailabilityEntry[]
+  availabilityPatterns  AvailabilityPattern[]
+  timesheets            Timesheet[]
+  clockingTerminals     ClockingTerminal[]
+  weeklyBudgets         WeeklyBudget[]
+  companyDocuments      CompanyDocument[]
+  companyMemos          CompanyMemo[]
+  apiKeys               ApiKey[]
+  webhookEndpoints      WebhookEndpoint[]
+}
+
+model User {
+  id                       String    @id @default(cuid())
+  workspaceId              String?
+  email                    String    @unique
+  emailVerified            DateTime?
+  name                     String?
+  firstName                String    @default("")
+  middleName               String?
+  lastName                 String    @default("")
+  preferredName            String?
+  image                    String?
+  passwordHash             String?
+  role                     String    @default("EMPLOYEE") // ADMIN | MANAGER | EMPLOYEE
+  isActive                 Boolean   @default(true)
+  deleted                  Boolean   @default(false)
+  deletedAt                DateTime?
+  pin                      String?
+  phone                    String?
+  dob                      String?
+  gender                   String?
+  startDate                String?
+  finalWorkingDate         String?
+  employmentType           String    @default("Full Time")
+  rightToWorkChecked       Boolean   @default(false)
+  weeklyHours              Float     @default(40)
+  maxWeeklyHours           Float     @default(48)
+  optedOutWtd              Boolean   @default(false)
+  holidayAllowance         Float     @default(28)
+  holidayAllowanceUnit     String    @default("days") // days | hours
+  accruesHoliday           Boolean   @default(false)
+  holidayAccrualRate       Float     @default(12.07)
+  salaryType               String    @default("hourly") // hourly | salaried
+  hourlyRate               Float     @default(12.0)
+  annualSalary             Float     @default(0)
+  overtimeRate             Float     @default(0)
+  payrollId                String?
+  niNumber                 String?
+  defaultRoleId            String?
+  groupId                  String?
+  address1                 String?
+  city                     String?
+  postcode                 String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  workScheduleJson         String    @default("{\"mon\":true,\"tue\":true,\"wed\":true,\"thu\":true,\"fri\":true,\"sat\":false,\"sun\":false}")
+  roleRatesJson            String    @default("{}")
+  notificationsJson        String    @default("{\"rotaPublishedEmail\":true,\"rotaPublishedPush\":true,\"shiftReminderEmail\":true,\"shiftReminderPush\":true,\"leaveUpdateEmail\":true,\"leaveUpdatePush\":true,\"swapUpdateEmail\":true,\"swapUpdatePush\":true}")
+  twoFactorEnabled         Boolean   @default(false)
+  notes                    String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  workspace            Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  defaultRole          Role?                 @relation("UserDefaultRole", fields: [defaultRoleId], references: [id], onDelete: SetNull)
+  group                Group?                @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  passwordCredential   PasswordCredential?
+  accounts             Account[]
+  sessions             Session[]
+  sentInvitations      AccountInvitation[]   @relation("InvitedByUser")
+  acceptedInvitations  AccountInvitation[]   @relation("AcceptedByUser")
+  employeeLocations    EmployeeLocation[]
+  employeeRoles        EmployeeRole[]
+  shifts               Shift[]               @relation("ShiftAssignee")
+  shiftsCreated        Shift[]               @relation("ShiftCreator")
+  shiftsDeleted        Shift[]               @relation("ShiftDeleter")
+  shiftRequestsMade    ShiftRequest[]        @relation("ShiftRequester")
+  shiftRequestsTarget  ShiftRequest[]        @relation("ShiftTarget")
+  leaveRecords         LeaveRecord[]         @relation("LeaveEmployee")
+  toilEntries          ToilEntry[]
+  availabilityEntries  AvailabilityEntry[]
+  availabilityPatterns AvailabilityPattern[]
+  timesheets           Timesheet[]
+  auditLogs            AuditLog[]
+
+  @@index([workspaceId, deleted])
+}
+
+model PasswordCredential {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  passwordHash      String
+  passwordChangedAt DateTime  @default(now())
+  resetTokenHash    String?   @unique
+  resetExpiresAt    DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RequestLimit {
+  key       String   @id
+  count     Int      @default(0)
+  resetsAt  DateTime
+  updatedAt DateTime @updatedAt
+}
+
+model AccountInvitation {
+  id              String    @id @default(cuid())
+  workspaceId     String?
+  codePrefix      String
+  tokenHash       String?   @unique
+  email           String
+  normalizedEmail String
+  activeForEmail  String?   @unique
+  firstName       String    @default("")
+  lastName        String    @default("")
+  role            String    @default("EMPLOYEE") // ADMIN | MANAGER | EMPLOYEE
+  status          String    @default("PENDING") // PENDING | CONSUMED | REVOKED | EXPIRED
+  locationIdsJson String    @default("[]")
+  defaultRoleId   String?
+  expiresAt       DateTime
+  invitedById     String?
+  acceptedById    String?
+  consumedAt      DateTime?
+  revokedAt       DateTime?
+  revokedByUserId String?
+  revokeReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workspace  Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy  User?      @relation("InvitedByUser", fields: [invitedById], references: [id], onDelete: SetNull)
+  acceptedBy User?      @relation("AcceptedByUser", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([normalizedEmail, status])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  workspaceId  String?
+  actorUserId  String?
+  actorEmail   String?
+  actorRole    String?
+  action       String
+  targetType   String
+  targetId     String?
+  summary      String
+  metadataJson String   @default("{}")
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  actor     User?      @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([action, createdAt])
+}
+
+model Location {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  name                 String
+  timezone             String   @default("Europe/London")
+  address              String?
+  latitude             Float?
+  longitude            Float?
+  geofenceRadiusMeters Int      @default(150)
+  clockInIps           String?
+  deleted              Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  employeeLocations EmployeeLocation[]
+  shifts            Shift[]
+  dayNotes          DayNote[]
+  leaveEmbargoes    LeaveEmbargo[]
+  timesheets        Timesheet[]
+  clockingTerminals ClockingTerminal[]
+  weeklyBudgets     WeeklyBudget[]
+  companyMemos      CompanyMemo[]
+
+  @@index([workspaceId, deleted])
+}
+
+model EmployeeLocation {
+  id         String  @id @default(cuid())
+  userId     String
+  locationId String
+  isManager  Boolean @default(false)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationId])
+}
+
+model Role {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  name         String
+  colour       String   @default("#0a65fc")
+  defaultBreak Int      @default(0)
+  defaultRate  Float    @default(12.0)
+  payCode      String?
+  deleted      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  defaultUsers  User[]         @relation("UserDefaultRole")
+  employeeRoles EmployeeRole[]
+  shifts        Shift[]
+  timesheets    Timesheet[]
+
+  @@index([workspaceId, deleted])
+}
+
+model EmployeeRole {
+  id         String @id @default(cuid())
+  userId     String
+  roleId     String
+  customRate Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  users     User[]
+
+  @@index([workspaceId])
+}
+
+model Shift {
+  id                             String    @id @default(cuid())
+  workspaceId                    String
+  locationId                     String
+  roleId                         String
+  userId                         String?
+  date                           String // YYYY-MM-DD
+  startTime                      String // HH:mm
+  endTime                        String // HH:mm
+  breakMinutes                   Int       @default(0)
+  breaksPaid                     Boolean   @default(false)
+  netHours                       Float     @default(0)
+  wageCost                       Float     @default(0)
+  notes                          String?
+  published                      Boolean   @default(false)
+  acknowledged                   Boolean   @default(false)
+  acknowledgedAt                 DateTime?
+  openShiftClaimApprovalRequired Boolean   @default(false)
+  deleted                        Boolean   @default(false)
+  deletedAt                      DateTime?
+  deletedByUserId                String?
+  createdByUserId                String?
+  createdAt                      DateTime  @default(now())
+  updatedAt                      DateTime  @updatedAt
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  location      Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  role          Role           @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user          User?          @relation("ShiftAssignee", fields: [userId], references: [id], onDelete: SetNull)
+  createdBy     User?          @relation("ShiftCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  deletedBy     User?          @relation("ShiftDeleter", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+  shiftRequests ShiftRequest[]
+  timesheets    Timesheet[]
+
+  @@index([workspaceId, locationId, date, deleted])
+  @@index([workspaceId, userId, date, deleted])
+}
+
+model DayNote {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  locationId      String
+  date            String // YYYY-MM-DD
+  content         String
+  visibility      String   @default("all") // all | managers
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  location  Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, date])
+}
+
+model ShiftRequest {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  shiftId          String
+  requesterUserId  String
+  targetUserId     String?
+  type             String // CLAIM | DROP | SWAP
+  status           String    @default("PENDING") // PENDING | APPROVED | DECLINED
+  reason           String?
+  managerNote      String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shift     Shift     @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  requester User      @relation("ShiftRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  target    User?     @relation("ShiftTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+}
+
+model LeaveRecord {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  userId           String
+  leaveTypeId      Int       @default(1) // 1..14
+  leaveTypeName    String    @default("Holiday")
+  startDate        String // YYYY-MM-DD
+  endDate          String // YYYY-MM-DD
+  daysCount        Float     @default(1)
+  hoursCount       Float     @default(8)
+  paid             Boolean   @default(true)
+  status           String    @default("REQUESTED") // REQUESTED | APPROVED | DECLINED
+  notes            String?
+  managerNote      String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation("LeaveEmployee", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId, startDate])
+  @@index([workspaceId, status])
+}
+
+model LeaveEmbargo {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  name         String
+  startDate    String // YYYY-MM-DD
+  endDate      String // YYYY-MM-DD
+  locationId   String?
+  appliesToAll Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  location  Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, startDate, endDate])
+}
+
+model ToilEntry {
+  id               String   @id @default(cuid())
+  workspaceId      String
+  userId           String
+  date             String // YYYY-MM-DD
+  hoursDelta       Float // positive accrued, negative used
+  reason           String
+  recordedByUserId String?
+  createdAt        DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+}
+
+model AvailabilityEntry {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  userId          String
+  date            String // YYYY-MM-DD
+  status          String   @default("UNAVAILABLE") // AVAILABLE | UNAVAILABLE | PREFERRED
+  allDay          Boolean  @default(true)
+  startTime       String?
+  endTime         String?
+  notes           String?
+  sourcePatternId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([workspaceId, date])
+}
+
+model AvailabilityPattern {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  userId         String
+  startDate      String
+  endDate        String?
+  frequencyWeeks Int      @default(1) // 1 | 2 | 4
+  scheduleJson   String   @default("{}")
+  createdAt      DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+}
+
+model Timesheet {
+  id                   String    @id @default(cuid())
+  workspaceId          String
+  userId               String
+  locationId           String
+  roleId               String
+  shiftId              String?
+  date                 String // YYYY-MM-DD
+  scheduledStart       String?
+  scheduledEnd         String?
+  clockInTime          String?
+  clockOutTime         String?
+  breakMinutes         Int       @default(0)
+  workedHours          Float     @default(0)
+  wageCost             Float     @default(0)
+  accruedHolidayHours  Float     @default(0)
+  status               String    @default("OPEN") // OPEN | SUBMITTED | APPROVED
+  discrepancyFlagsJson String    @default("[]")
+  notes                String?
+  approvedByUserId     String?
+  approvedAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location  Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  shift     Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, date, status])
+  @@index([workspaceId, userId, date])
+}
+
+model ClockingTerminal {
+  id          String    @id @default(cuid())
+  workspaceId String
+  locationId  String
+  name        String
+  deviceCode  String    @unique
+  lastPingAt  DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  location  Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model WeeklyBudget {
+  id                  String   @id @default(cuid())
+  workspaceId         String
+  locationId          String
+  weekStart           String // YYYY-MM-DD (Monday)
+  revenueTarget       Float    @default(0)
+  labourBudgetAmount  Float    @default(0)
+  labourTargetPercent Float    @default(25)
+  targetHours         Float    @default(0)
+  forecastNotes       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  location  Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, weekStart])
+  @@index([workspaceId, weekStart])
+}
+
+model CompanyDocument {
+  id                String    @id @default(cuid())
+  workspaceId       String
+  title             String
+  fileName          String
+  fileSize          Int       @default(1024)
+  category          String    @default("Policy")
+  userId            String?
+  requiresSignature Boolean   @default(false)
+  signedAt          DateTime?
+  signedByUserId    String?
+  uploadedByUserId  String?
+  createdAt         DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model CompanyMemo {
+  id                      String   @id @default(cuid())
+  workspaceId             String
+  title                   String
+  content                 String
+  locationId              String?
+  requiresAcknowledgement Boolean  @default(false)
+  acknowledgedByJson      String   @default("[]")
+  authorUserId            String?
+  createdAt               DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  location  Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+}
+
+model ApiKey {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  name            String
+  keyPrefix       String
+  keyHash         String    @unique
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model WebhookEndpoint {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  url           String
+  eventsJson    String   @default("[\"shift.published\",\"leave.approved\",\"timesheet.approved\"]")
+  signingSecret String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
